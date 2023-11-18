@@ -3,9 +3,8 @@ import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 
-train_batch_size = 128
+
 d_model = 512  # data dimension
-d_data = 100 # number of historical value of each stock
 d_q = d_k = d_v = 64  # wq=wk=wv
 # ffn_hidden = 2048  # feedforward layer
 n_heads = 8 # multi heads
@@ -13,12 +12,15 @@ n_layer = 6 # encoder layers
 
 
 class TransformerEncoderOnly(nn.Module):
-    def __init__(self):
+    def __init__(self, d_data):
         super(TransformerEncoderOnly, self).__init__()
+        self.trans_d=nn.Linear(d_data, d_model)
         self.encoder=Encoder()
         self.predict_ln=nn.Linear(d_model,1) # predict the value
 
     def forward(self, inputs):
+        # [batch_size, input_len, d_data]
+        inputs=self.trans_d(inputs)
         # [batch_size, input_len, d_model]
         enc_outputs, enc_self_attns = self.encoder(inputs)
         pred_outputs=torch.squeeze(self.predict_ln(enc_outputs),-1) # [batch_size, input_len]
@@ -101,13 +103,11 @@ class EncoderLayer(nn.Module):
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder,self).__init__()
-        self.ln = nn.Linear(d_data, d_model)
         self.enc_layers = nn.ModuleList([EncoderLayer for _ in range(n_layer)])
 
     def forward(self, inputs):
         # [batch_size, input_len, d_data]
-        enc_inputs = self.ln(inputs)
-        enc_outputs = enc_inputs
+        enc_outputs = inputs
         enc_self_attns=[]
         for layer in self.enc_layers:
             enc_outputs,enc_self_attn=layer(enc_outputs)
