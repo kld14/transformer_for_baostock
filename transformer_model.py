@@ -11,6 +11,9 @@ n_heads = 8 # multi heads
 n_layer = 6 # encoder layers
 
 
+# the following batch_size is 1, and input_len equals to batch_size
+
+
 class TransformerEncoderOnly(nn.Module):
     def __init__(self, d_data):
         super(TransformerEncoderOnly, self).__init__()
@@ -103,7 +106,7 @@ class EncoderLayer(nn.Module):
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder,self).__init__()
-        self.enc_layers = nn.ModuleList([EncoderLayer for _ in range(n_layer)])
+        self.enc_layers = nn.ModuleList([EncoderLayer() for _ in range(n_layer)])
 
     def forward(self, inputs):
         # [batch_size, input_len, d_data]

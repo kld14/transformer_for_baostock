@@ -4,8 +4,8 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 
 
-data_paths_file = '/data/kld/baostock/A_Code_noBJ.txt'
-data_paths_prefix = '/data/kld/baostock/A_Data/dailyEst/'
+data_paths_file = "/data/kld/baostock/A_Code_noBJ.txt"
+data_paths_prefix = "/data/kld/baostock/A_Data/dailyEst/"
 
 
 def get_datasets(num_data, d_data):
@@ -20,14 +20,17 @@ def get_datasets(num_data, d_data):
         if file_nums == num_data:
             break
         t = f.readline().rstrip()
-    hist_data=[]
-    trg_data=[]
+    hist_data = []
+    trg_data = []
     for dsname in datasets:
-        dataset = pd.read_csv(data_paths_prefix+dsname+'.csv',usecols=[2],nrows=d_data)
-        #close = dataset['close'].astype(str)
-        #series = pd.Series(dataset['close'].values, index=dataset['date']) # convert series to ndarray by .values
-        hist_data.append(dataset['close'].values[:-1]) # [num_data, d_data]
-        trg_data.append([dataset['close'].values[-1]]) # [num_data]
+        dataset = pd.read_csv(data_paths_prefix + dsname + ".csv", usecols=[2], nrows=d_data + 1)
+        # close = dataset['close'].astype(str)
+        # series = pd.Series(dataset['close'].values, index=dataset['date']) # convert series to ndarray by .values
+        if len(dataset["close"].values) != d_data + 1:
+            print(dsname)
+            continue
+        hist_data.append(dataset["close"].values[:-1])  # [num_data, d_data]
+        trg_data.append([dataset["close"].values[-1]])  # [num_data]
     return torch.tensor(np.array(hist_data)).float(), torch.tensor(np.array(trg_data)).squeeze(-1).float()
 
 
@@ -36,9 +39,10 @@ class TransformerDataset(Dataset):
         super(TransformerDataset, self).__init__()
         self.hist_data = hist_data
         self.trg_data = trg_data
+
     def __len__(self):
         assert self.hist_data.shape[0] == self.trg_data.shape[0]
         return self.hist_data.shape[0]
+
     def __getitem__(self, index):
-        return self.hist_data[index], self.trg_data[index] # [a,b,c], a
-        
+        return self.hist_data[index], self.trg_data[index]  # [a,b,c], a
